@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Akhirat Daily — Single File</title>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#fff; --muted:#667085; --accent:#0b84ff; --success:#16a34a;
+      --danger:#ef4444; --glass: rgba(255,255,255,0.6);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body,#app{height:100%}
+    body{
+      margin:0; background:var(--bg); color:#0f172a; -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* Layout */
+    .root{display:flex; min-height:100vh;}
+    .sidebar{
+      width:280px; background:linear-gradient(180deg,#ffffff,#f8fafc); border-right:1px solid rgba(15,23,42,0.06);
+      padding:18px; position:fixed; inset:0 auto 0 0; transform:translateX(0); transition:transform .22s ease;
+    }
+    .sidebar.hidden{transform:translateX(-110%);}
+    .content{flex:1; margin-left:280px; min-height:100vh; display:flex; flex-direction:column;}
+    header.appbar{height:64px; display:flex; align-items:center; justify-content:space-between; padding:12px 18px; background:rgba(255,255,255,0.7); backdrop-filter:blur(6px); border-bottom:1px solid rgba(15,23,42,0.04)}
+    footer{padding:14px; text-align:center; font-size:13px; color:var(--muted)}
+    main{flex:1; padding:18px}
+
+    /* Sidebar content */
+    .brand{font-weight:700; font-size:18px}
+    .nav{margin-top:18px; display:flex; flex-direction:column; gap:6px}
+    .nav button{background:transparent; border:0; text-align:left; padding:10px 12px; border-radius:8px; cursor:pointer; font-size:15px}
+    .nav button:hover{background:#f1f5f9}
+    .small{font-size:13px; color:var(--muted)}
+
+    /* Cards / grid */
+    .grid{display:grid; gap:12px}
+    .grid.columns-3{grid-template-columns:repeat(3,1fr)}
+    .card{background:var(--card); border-radius:12px; padding:14px; box-shadow:0 1px 2px rgba(16,24,40,0.04)}
+    .h2{font-size:16px; font-weight:600}
+    .muted{color:var(--muted); font-size:13px}
+
+    /* List items */
+    .list{display:flex; flex-direction:column; gap:8px}
+    .item{display:flex; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; background:linear-gradient(180deg, rgba(250,250,250,1), rgba(255,255,255,1)); border:1px solid rgba(15,23,42,0.03)}
+    .item .left{display:flex; gap:12px; align-items:center}
+    .pill{font-size:12px; padding:6px 8px; border-radius:999px; background:#f1f5f9; color:#0f172a}
+    .btn{padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); background:transparent; cursor:pointer}
+    .btn.primary{background:var(--accent); color:#fff; border:0}
+    .btn.danger{background:var(--danger); color:#fff; border:0}
+
+    .done{opacity:0.5; text-decoration:line-through}
+
+    /* Form */
+    .form-row{display:flex; gap:8px; margin-top:8px}
+    input[type="text"], input[type="time"], select{padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); width:100%}
+    label.file{display:inline-block; padding:8px 10px; border-radius:8px; border:1px dashed rgba(15,23,42,0.06); cursor:pointer}
+
+    /* Responsive */
+    .hamburger{display:none; font-size:20px; border:0; background:transparent; cursor:pointer}
+    @media (max-width:900px){
+      .sidebar{position:fixed; z-index:40; left:0; top:0; bottom:0}
+      .sidebar.hidden{transform:translateX(-110%)}
+      .content{margin-left:0}
+      .hamburger{display:inline-block}
+    }
+
+    /* modal */
+    .modal-back{position:fixed; inset:0; background:rgba(2,6,23,0.55); display:flex; align-items:center; justify-content:center; z-index:80}
+    .modal{width:100%; max-width:640px; background:var(--card); padding:16px; border-radius:12px}
+
+    /* small helpers */
+    .flex{display:flex}
+    .gap-2{gap:8px}
+    .space-y{display:flex; flex-direction:column; gap:8px}
+    .right{margin-left:auto}
+    .txt-sm{font-size:13px}
+    .tag{background:#eef2ff;color:#3730a3;padding:4px 8px;border-radius:999px;font-size:12px}
+    .toolbar{display:flex; gap:8px; align-items:center}
+    .search{padding:8px 10px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); width:220px}
+    .hidden-el{display:none}
+    .muted-2{color:#8892a3}
+  </style>
+</head>
+<body>
+  <div id="app" class="root">
+    <aside id="sidebar" class="sidebar">
+      <div class="brand">Akhirat Daily</div>
+      <div class="small">Fokus: akhirat • Data tersimpan di browser</div>
+
+      <nav class="nav" aria-label="Main navigation">
+        <button data-menu="dashboard">Dashboard</button>
+        <button data-menu="today">Hari Ini</button>
+        <button data-menu="history">History</button>
+        <button data-menu="templates">Template & Cepat</button>
+        <button data-menu="settings">Pengaturan</button>
+      </nav>
+
+      <div style="margin-top:18px" class="small">
+        <div style="font-weight:600;margin-bottom:6px">Petunjuk</div>
+        Tambah kegiatan, tandai selesai. Sholat dibuat otomatis tiap hari. Gunakan ekspor/impor untuk cadangan.
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="appbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="hamburger" class="hamburger" aria-label="menu">☰</button>
+          <div>
+            <div class="muted txt-sm">Tanggal</div>
+            <div id="todayLabel" style="font-weight:700"></div>
+          </div>
+          <div style="margin-left:10px;padding:6px 10px;border-radius:8px;background:rgba(11,132,255,0.1);color:var(--accent);font-weight:600;font-size:13px">Fokus: Akhirat</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px">
+          <input id="search" class="search" placeholder="Cari kegiatan..." />
+          <button id="exportBtn" class="btn">Export</button>
+          <label class="label file btn" style="padding:8px 10px">
+            Import
+            <input id="importFile" type="file" accept="application/json" style="display:none" />
+          </label>
+        </div>
+      </header>
+
+      <main>
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view">
+          <div class="grid columns-3" style="align-items:start">
+            <div class="card">
+              <div class="h2">Kegiatan Hari Ini</div>
+              <div style="font-size:28px;font-weight:700;margin-top:8px" id="statMain">0 / 0</div>
+              <div class="muted" id="statPrayer" style="margin-top:6px">Sholat: 0/0</div>
+            </div>
+
+            <div class="card">
+              <div class="h2">Presets Cepat</div>
+              <div id="templateButtons" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap"></div>
+            </div>
+
+            <div class="card">
+              <div class="h2">Statistik Lain</div>
+              <div class="muted" style="margin-top:8px">Total item di history: <span id="historyCount">0</span></div>
+              <div class="muted" style="margin-top:6px">Backup manual tersedia (export/import).</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="card">
+              <div class="h2">Sholat (hari ini)</div>
+              <div id="prayerList" style="margin-top:10px; display:flex; flex-direction:column; gap:8px"></div>
+            </div>
+
+            <div class="card">
+              <div class="h2">Quick Add</div>
+              <div style="margin-top:10px; display:flex; gap:8px">
+                <input id="quickInput" type="text" placeholder="Tambah kegiatan cepat" />
+                <button id="quickAddBtn" class="btn primary">Tambah</button>
+              </div>
+              <div class="muted" style="margin-top:8px">Tips: mulai dari kegiatan kecil yang konsisten.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Today -->
+        <section id="view-today" class="view hidden-el" style="margin-top:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div><div class="h2">Kegiatan Hari Ini</div><div class="muted txt-sm">Tambah / tandai / arsip</div></div>
+            <div class="toolbar">
+              <select id="filterSelect">
+                <option value="">Semua</option>
+                <option value="Sholat">Sholat</option>
+                <option value="Ibadah">Ibadah</option>
+                <option value="Kebaikan">Kebaikan</option>
+                <option value="Belajar">Belajar</option>
+              </select>
+              <select id="sortSelect">
+                <option value="priority">Prioritas</option>
+                <option value="title">Judul (A-Z)</option>
+              </select>
+              <button id="archiveToday" class="btn">Arsipkan Hari Ini</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" id="todayList" class="list"></div>
+
+          <div class="card" style="margin-top:12px">
+            <div class="h2">Tambah Kegiatan Manual</div>
+            <form id="addForm" style="margin-top:8px">
+              <div style="display:flex;gap:8px">
+                <input id="addTitle" type="text" placeholder="Judul kegiatan" required />
+                <select id="addCategory">
+                  <option>Ibadah</option>
+                  <option>Sholat</option>
+                  <option>Kebaikan</option>
+                  <option>Belajar</option>
+                </select>
+                <select id="addPriority">
+                  <option value="1">Rendah</option>
+                  <option value="2">Sedang</option>
+                  <option value="3">Tinggi</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <input id="addTags" type="text" placeholder="tags, pisah dengan koma" />
+                <input id="addTime" type="time" />
+                <div style="margin-left:auto">
+                  <button class="btn primary" type="submit">Tambah</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- History -->
+        <section id="view-history" class="view hidden-el" style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div class="h2">History</div><div class="muted txt-sm">Arsip per-hari</div></div>
+            <div>
+              <button id="clearHistory" class="btn danger">Bersihkan History</button>
+            </div>
+          </div>
+
+          <div id="historyList" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"></div>
+        </section>
+
+        <!-- Templates -->
+        <section id="view-templates" class="view hidden-el" style="margin-top:10px">
+          <div class="h2">Template & Preset Cepat</div>
+          <div id="templatesArea" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"></div>
+
+          <div class="card" style="margin-top:10px">
+            <div class="h2">Tambah Template</div>
+            <form id="templateForm" style="margin-top:8px">
+              <div style="display:flex;gap:8px">
+                <input id="tplTitle" type="text" placeholder="Judul template" required />
+                <input id="tplContent" type="text" placeholder="Keterangan (opsional)" />
+                <button class="btn primary" type="submit">Simpan Template</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section id="view-settings" class="view hidden-el" style="margin-top:10px">
+          <div class="h2">Pengaturan</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+            <div class="card">
+              <div class="h2">Waktu Sholat (default)</div>
+              <form id="prayerTimesForm" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+                <!-- prayer inputs injected by JS -->
+              </form>
+              <div class="muted txt-sm" style="margin-top:6px">Catatan: atur waktu sholat sesuai wilayah. Aplikasi ini tidak menghitung astronomi otomatis.</div>
+            </div>
+
+            <div class="card">
+              <div class="h2">Data</div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button id="resetApp" class="btn danger">Reset Aplikasi</button>
+                <button id="downloadBackup" class="btn">Backup Sekarang</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        Aplikasi pribadi — fokus akhirat • Data tersimpan lokal (browser)
+      </footer>
+    </div>
+  </div>
+
+  <!-- modal container -->
+  <div id="modalRoot" class="hidden-el"></div>
+
+  <script>
+    (function(){
+      // Keys
+      const STORAGE_KEY = 'akhirat_single_v1';
+      const HISTORY_KEY = 'akhirat_single_history_v1';
+      // Default prayers
+      const DEFAULT_PRAYERS = [
+        { key:'fajr', label:'Subuh', time:'04:30' },
+        { key:'dhuhr', label:'Dzuhur', time:'12:00' },
+        { key:'asr', label:'Ashar', time:'15:15' },
+        { key:'maghrib', label:'Maghrib', time:'18:05' },
+        { key:'isha', label:'Isya', time:'19:20' }
+      ];
+
+      // Helpers
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+      const todayISO = ()=> new Date().toISOString().slice(0,10);
+      const genId = ()=> Math.random().toString(36).slice(2,9);
+      function saveState(s){ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+      function loadState(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }catch(e){return null} }
+      function saveHistory(h){ localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+      function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }catch(e){return []} }
+
+      // App state
+      let state = loadState();
+      let historyData = loadHistory();
+
+      if(!state){
+        state = {
+          date: todayISO(),
+          activities: [],
+          prayerTimes: DEFAULT_PRAYERS.slice(),
+          templates: [
+            { id: genId(), title:'Tilawah 15 menit', content:'Membaca Al-Qur\'an' },
+            { id: genId(), title:'Sedekah kecil', content:'Sedekah harian' }
+          ]
+        };
+      }
+
+      // Archive if date changed since last stored state
+      function checkDayChangeOnLoad(){
+        const current = todayISO();
+        if(state.date !== current){
+          // move all current activities into history with archivedAt = state.date
+          const toArchive = state.activities.map(a => ({...a, archivedAt: state.date}));
+          historyData = toArchive.concat(historyData);
+          saveHistory(historyData);
+          // create today's prayer tasks
+          const prayers = state.prayerTimes.map(p => ({
+            id: genId(),
+            title: `Sholat: ${p.label}`,
+            category: 'Sholat',
+            tags: ['sholat'],
+            priority: 3,
+            done: false,
+            date: current,
+            type: 'prayer',
+            prayerKey: p.key,
+            scheduledTime: p.time
+          }));
+          state.activities = prayers;
+          state.date = current;
+          saveState(state);
+        } else {
+          // Ensure prayers exist for today (if missing)
+          const hasPrayerToday = state.activities.some(a=>a.type==='prayer' && a.date===current);
+          if(!hasPrayerToday){
+            const prayers = state.prayerTimes.map(p => ({
+              id: genId(),
+              title: `Sholat: ${p.label}`,
+              category: 'Sholat',
+              tags: ['sholat'],
+              priority: 3,
+              done: false,
+              date: current,
+              type: 'prayer',
+              prayerKey: p.key,
+              scheduledTime: p.time
+            }));
+            state.activities = prayers.concat(state.activities.filter(a=>a.date===current));
+            saveState(state);
+          }
+        }
+      }
+
+      checkDayChangeOnLoad();
+
+      // DOM refs
+      const sidebar = $('#sidebar');
+      const hamburger = $('#hamburger');
+      const todayLabel = $('#todayLabel');
+      const searchInput = $('#search');
+      const exportBtn = $('#exportBtn');
+      const importFile = $('#importFile');
+      const viewEls = $$('.view');
+      const menuButtons = $$('.nav button');
+      const templateButtons = $('#templateButtons');
+      const prayerList = $('#prayerList');
+      const quickInput = $('#quickInput');
+      const quickAddBtn = $('#quickAddBtn');
+      const statMain = $('#statMain');
+      const statPrayer = $('#statPrayer');
+      const historyCountEl = $('#historyCount');
+
+      // Views
+      function showView(name){
+        viewEls.forEach(v => v.classList.add('hidden-el'));
+        const el = document.getElementById('view-' + name);
+        if(el) el.classList.remove('hidden-el');
+        // close sidebar on small screens
+        if(window.innerWidth <= 900) sidebar.classList.add('hidden');
+      }
+
+      menuButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const menu = btn.dataset.menu;
+          showView(menu);
+        });
+      });
+
+      hamburger.addEventListener('click', ()=>{
+        sidebar.classList.toggle('hidden');
+      });
+
+      // Auto update date label
+      function refreshDateLabel(){ todayLabel.textContent = todayISO(); }
+      refreshDateLabel();
+
+      // CRUD actions
+      function addActivity({ title, category='Ibadah', tags=[], priority=1, type='manual', scheduledTime=null }){
+        const a = { id: genId(), title, category, tags, priority, done:false, date: todayISO(), type, scheduledTime };
+        state.activities.unshift(a);
+        saveState(state);
+        renderAll();
+      }
+      function toggleDone(id){
+        state.activities = state.activities.map(a => a.id===id? {...a, done:!a.done}:a);
+        saveState(state);
+        renderAll();
+      }
+      function removeActivity(id){
+        if(!confirm('Hapus kegiatan ini?')) return;
+        state.activities = state.activities.filter(a => a.id !== id);
+        saveState(state);
+        renderAll();
+      }
+      function editActivity(id, patch){
+        state.activities = state.activities.map(a => a.id===id? {...a, ...patch}:a);
+        saveState(state);
+        renderAll();
+      }
+
+      // Archive today
+      function archiveToday(){
+        if(!confirm('Arsipkan semua kegiatan hari ini ke history?')) return;
+        const current = todayISO();
+        const toArchive = state.activities.map(a => ({...a, archivedAt: current}));
+        historyData = toArchive.concat(historyData);
+        saveHistory(historyData);
+        state.activities = [];
+        saveState(state);
+        renderAll();
+        alert('Hari ini diarsipkan.');
+      }
+      $('#archiveToday').addEventListener('click', archiveToday);
+
+      // Export/Import
+      exportBtn.addEventListener('click', ()=>{
+        const payload = { state, history: historyData };
+        const blob = new Blob([JSON.stringify(payload, null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `akhirat_backup_${todayISO()}.json`; a.click();
+        URL.revokeObjectURL(url);
+      });
+      $('#downloadBackup').addEventListener('click', ()=> exportBtn.click());
+
+      importFile.addEventListener('change', (e)=>{
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev)=>{
+          try{
+            const obj = JSON.parse(ev.target.result);
+            if(obj.state) { state = obj.state; saveState(state); }
+            if(obj.history) { historyData = obj.history; saveHistory(historyData); }
+            renderAll();
+            alert('Impor berhasil');
+          }catch(err){
+            alert('Gagal impor: '+err.message);
+          }
+        };
+        reader.readAsText(file);
+      });
+      // wire label click to file input
+      document.querySelector('label.file').addEventListener('click', ()=> importFile.click());
+
+      // Templates
+      function renderTemplates(){
+        templateButtons.innerHTML = '';
+        state.templates.forEach(t=>{
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = t.title;
+          btn.addEventListener('click', ()=> {
+            addActivity({ title: t.title, category: 'Ibadah' });
+          });
+          templateButtons.appendChild(btn);
+        });
+
+        const ta = $('#templatesArea');
+        ta.innerHTML = '';
+        state.templates.forEach(t=>{
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:600">${escapeHtml(t.title)}</div>
+              <div class="muted txt-sm">${escapeHtml(t.content||'')}</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn" data-id="${t.id}" data-action="apply">Tambah</button>
+              <button class="btn" data-id="${t.id}" data-action="del">Hapus</button>
+            </div>
+          </div>`;
+          ta.appendChild(div);
+        });
+
+        document.querySelectorAll('[data-action="apply"]').forEach(b=>{
+          b.addEventListener('click', (ev)=>{
+            const id = b.dataset.id;
+            const tpl = state.templates.find(x=>x.id===id);
+            if(tpl) addActivity({ title: tpl.title });
+          });
+        });
+        document.querySelectorAll('[data-action="del"]').forEach(b=>{
+          b.addEventListener('click', (ev)=>{
+            const id = b.dataset.id;
+            if(confirm('Hapus template?')){
+              state.templates = state.templates.filter(t=>t.id!==id);
+              saveState(state);
+              renderTemplates();
+            }
+          });
+        });
+      }
+      $('#templateForm').addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const title = $('#tplTitle').value.trim();
+        const content = $('#tplContent').value.trim();
+        if(!title) return alert('Masukkan judul template');
+        state.templates.unshift({ id: genId(), title, content });
+        saveState(state);
+        $('#tplTitle').value=''; $('#tplContent').value='';
+        renderTemplates();
+      });
+
+      // Quick add
+      quickAddBtn.addEventListener('click', ()=>{
+        const v = quickInput.value.trim();
+        if(!v) return;
+        addActivity({ title: v, category:'Ibadah' });
+        quickInput.value = '';
+      });
+      quickInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') quickAddBtn.click(); });
+
+      // Today list rendering
+      function renderTodayList(){
+        const root = $('#todayList');
+        root.innerHTML = '';
+        const filter = $('#filterSelect').value;
+        const search = $('#search').value.trim().toLowerCase();
+        const sortBy = $('#sortSelect').value;
+        let list = state.activities.filter(a => a.date === todayISO());
+        if(filter) list = list.filter(a => a.category === filter);
+        if(search) list = list.filter(a => (a.title||'').toLowerCase().includes(search) || (a.tags||[]).some(t=>t.toLowerCase().includes(search)));
+        if(sortBy === 'priority') list.sort((a,b)=>b.priority - a.priority);
+        else list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+
+        if(list.length===0){
+          root.innerHTML = '<div class="card muted">Tidak ada kegiatan untuk hari ini.</div>';
+          return;
+        }
+
+        list.forEach(a=>{
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `<div class="left">
+            <div style="width:8px;height:8px;border-radius:50%;background:${a.type==='prayer'?'#f97316':'#60a5fa'}"></div>
+            <div>
+              <div class="${a.done?'done':''}" style="font-weight:600">${escapeHtml(a.title)}</div>
+              <div class="muted txt-sm">${escapeHtml(a.category)} ${a.tags && a.tags.length? ' • '+a.tags.join(', '):''}${a.scheduledTime? ' • '+a.scheduledTime:''}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn" data-id="${a.id}" data-act="toggle">${a.done? 'Undo':'Selesai'}</button>
+            <button class="btn" data-id="${a.id}" data-act="edit">Edit</button>
+            <button class="btn" data-id="${a.id}" data-act="del">Hapus</button>
+          </div>`;
+          root.appendChild(div);
+        });
+
+        root.querySelectorAll('[data-act]').forEach(b=>{
+          b.addEventListener('click',(ev)=>{
+            const id = b.dataset.id;
+            const act = b.dataset.act;
+            if(act==='toggle') toggleDone(id);
+            if(act==='del') removeActivity(id);
+            if(act==='edit') openEditModal(id);
+          });
+        });
+      }
+
+      // Prayers rendering
+      function renderPrayers(){
+        prayerList.innerHTML = '';
+        const today = todayISO();
+        const nowTs = Date.now();
+        state.prayerTimes.forEach(p=>{
+          const scheduled = p.time;
+          const scheduledTs = new Date(today + 'T' + (scheduled||'00:00') + ':00').getTime();
+          const passed = nowTs > scheduledTs;
+          // find corresponding task
+          const task = state.activities.find(a=>a.type==='prayer' && a.prayerKey===p.key && a.date===today);
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `<div>
+            <div style="font-weight:600">${p.label}</div>
+            <div class="muted txt-sm">${p.time} • ${passed? 'sudah lewat':'belum lewat'}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn" data-key="${p.key}" ${!task? 'disabled':''}>${task && task.done? 'Sudah':'Tandai'}</button>
+          </div>`;
+          prayerList.appendChild(div);
+        });
+        prayerList.querySelectorAll('button[data-key]').forEach(b=>{
+          b.addEventListener('click', ()=>{
+            const key = b.dataset.key;
+            const task = state.activities.find(a=>a.type==='prayer' && a.prayerKey===key && a.date===todayISO());
+            if(task) toggleDone(task.id);
+          });
+        });
+      }
+
+      // Dashboard stats
+      function renderStats(){
+        const today = todayISO();
+        const todays = state.activities.filter(a=>a.date===today);
+        const done = todays.filter(a=>a.done).length;
+        const total = todays.length;
+        const pTotal = todays.filter(a=>a.type==='prayer').length;
+        const pDone = todays.filter(a=>a.type==='prayer' && a.done).length;
+        statMain.textContent = `${done} / ${total}`;
+        statPrayer.textContent = `Sholat: ${pDone}/${pTotal}`;
+      }
+
+      // History rendering
+      function renderHistory(){
+        const root = $('#historyList');
+        root.innerHTML = '';
+        if(historyData.length===0){
+          root.innerHTML = '<div class="card muted">History kosong.</div>';
+          return;
+        }
+        historyData.slice(0,200).forEach(h=>{
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:600">${escapeHtml(h.title)}</div>
+              <div class="muted txt-sm">${escapeHtml(h.category)} • ${h.archivedAt || ''}</div>
+            </div>
+            <div class="muted txt-sm">${h.done? 'Selesai':'Tidak'}</div>
+          </div>`;
+          root.appendChild(div);
+        });
+        historyCountEl.textContent = historyData.length;
+      }
+
+      // Settings: prayer times edit
+      function renderPrayerSettings(){
+        const form = $('#prayerTimesForm');
+        form.innerHTML = '';
+        state.prayerTimes.forEach((p, idx)=>{
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.gap = '8px';
+          row.innerHTML = `<div style="width:90px;display:flex;align-items:center">${p.label}</div>
+            <input type="time" value="${p.time}" data-key="${p.key}" />`;
+          form.appendChild(row);
+        });
+        form.querySelectorAll('input[type="time"]').forEach(inp=>{
+          inp.addEventListener('change', ()=>{
+            const key = inp.dataset.key;
+            state.prayerTimes = state.prayerTimes.map(q => q.key===key? {...q, time: inp.value}:q);
+            saveState(state);
+            // Update today's prayer tasks times if exists
+            state.activities = state.activities.map(a=>{
+              if(a.type==='prayer' && state.prayerTimes.some(p=>p.key===a.prayerKey)){
+                const p = state.prayerTimes.find(pp=>pp.key===a.prayerKey);
+                return {...a, scheduledTime: p.time};
+              }
+              return a;
+            });
+            saveState(state);
+            renderAll();
+          });
+        });
+      }
+
+      // Add form events
+      $('#addForm').addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const title = $('#addTitle').value.trim();
+        if(!title) return alert('Judul diperlukan');
+        const category = $('#addCategory').value;
+        const priority = Number($('#addPriority').value||1);
+        const tags = ($('#addTags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+        const scheduledTime = $('#addTime').value || null;
+        addActivity({ title, category, priority, tags, scheduledTime, type: category==='Sholat' ? 'prayer' : 'manual' });
+        $('#addTitle').value=''; $('#addTags').value=''; $('#addTime').value='';
+      });
+
+      // Search updates lists live
+      searchInput.addEventListener('input', ()=> {
+        renderTodayList();
+        renderTemplates();
+      });
+
+      // Filter & sort events
+      $('#filterSelect').addEventListener('change', renderTodayList);
+      $('#sortSelect').addEventListener('change', renderTodayList);
+
+      // Clear history
+      $('#clearHistory').addEventListener('click', ()=>{
+        if(confirm('Bersihkan seluruh history?')){ historyData = []; saveHistory(historyData); renderAll(); }
+      });
+
+      // Reset app
+      $('#resetApp').addEventListener('click', ()=>{
+        if(confirm('Reset semua data (akan hilang)?')){ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(HISTORY_KEY); location.reload(); }
+      });
+
+      // Edit modal
+      function openEditModal(id){
+        const a = state.activities.find(x=>x.id===id);
+        if(!a) return;
+        const modalRoot = $('#modalRoot');
+        modalRoot.innerHTML = '';
+        modalRoot.classList.remove('hidden-el');
+        const back = document.createElement('div');
+        back.className = 'modal-back';
+        const mod = document.createElement('div');
+        mod.className = 'modal';
+        mod.innerHTML = `<div style="font-weight:700;margin-bottom:8px">Edit Kegiatan</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <input id="editTitle" type="text" value="${escapeHtml(a.title)}" />
+            <div style="display:flex;gap:8px">
+              <select id="editCategory">
+                <option ${a.category==='Ibadah'?'selected':''}>Ibadah</option>
+                <option ${a.category==='Sholat'?'selected':''}>Sholat</option>
+                <option ${a.category==='Kebaikan'?'selected':''}>Kebaikan</option>
+                <option ${a.category==='Belajar'?'selected':''}>Belajar</option>
+              </select>
+              <select id="editPriority">
+                <option value="1" ${a.priority===1?'selected':''}>Rendah</option>
+                <option value="2" ${a.priority===2?'selected':''}>Sedang</option>
+                <option value="3" ${a.priority===3?'selected':''}>Tinggi</option>
+              </select>
+              <input id="editTime" type="time" value="${a.scheduledTime||''}" />
+            </div>
+            <input id="editTags" type="text" value="${(a.tags||[]).join(',')}" />
+            <div style="display:flex;justify-content:flex-end;gap:8px">
+              <button id="editCancel" class="btn">Batal</button>
+              <button id="editSave" class="btn primary">Simpan</button>
+            </div>
+          </div>`;
+        back.appendChild(mod);
+        modalRoot.appendChild(back);
+
+        $('#editCancel').addEventListener('click', ()=> { modalRoot.innerHTML=''; modalRoot.classList.add('hidden-el'); });
+        $('#editSave').addEventListener('click', ()=>{
+          const title = $('#editTitle').value.trim();
+          const category = $('#editCategory').value;
+          const priority = Number($('#editPriority').value);
+          const scheduledTime = $('#editTime').value || null;
+          const tags = ($('#editTags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+          editActivity(id, { title, category, priority, tags, scheduledTime });
+          modalRoot.innerHTML=''; modalRoot.classList.add('hidden-el');
+        });
+      }
+
+      // Utils
+      function escapeHtml(str){
+        if(!str) return '';
+        return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+      }
+
+      // Render all
+      function renderAll(){
+        renderTemplates();
+        renderPrayers();
+        renderTodayList();
+        renderStats();
+        renderHistory();
+        renderPrayerSettings();
+      }
+      renderAll();
+
+      // Periodic tick to update "passed" states and auto-check day change at midnight
+      setInterval(()=>{
+        renderPrayers();
+        renderStats();
+        // check if day changed while app open
+        const current = todayISO();
+        if(state.date !== current){
+          // archive previous day
+          const toArchive = state.activities.map(a=>({...a, archivedAt: state.date}));
+          historyData = toArchive.concat(historyData);
+          saveHistory(historyData);
+          const prayers = state.prayerTimes.map(p => ({
+            id: genId(), title:`Sholat: ${p.label}`, category:'Sholat', tags:['sholat'], priority:3, done:false, date:current, type:'prayer', prayerKey:p.key, scheduledTime:p.time
+          }));
+          state.activities = prayers;
+          state.date = current;
+          saveState(state);
+          renderAll();
+        }
+      }, 30 * 1000);
+
+      // Small UX: auto-close sidebar when clicking a nav on mobile (already handled), also close when clicking outside on small
+      document.addEventListener('click', (e)=>{
+        if(window.innerWidth <= 900 && !sidebar.contains(e.target) && !hamburger.contains(e.target)){
+          sidebar.classList.add('hidden');
+        }
+      });
+
+      // initial view
+      showView('dashboard');
+
+      // expose some debug for console (optional)
+      window._akhirat = { stateRef: ()=> state, historyRef: ()=> historyData, save: ()=> { saveState(state); saveHistory(historyData); } };
+
+    })();
+  </script>
+</body>
+</html>
